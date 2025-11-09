@@ -1,0 +1,47 @@
+You are an AI assistant operating in a VS Code workspace containing the Meshtastic firmware sources. Your user wants to flash a TTGO LoRa32 V1 (26MHz crystal) board that previously failed to flash at high baud rates.
+
+Objectives:
+1. Build and flash Meshtastic for TTGO LoRa32 V1.
+2. Avoid the prior flashing error: "Unable to verify flash chip connection (Invalid head of packet (0x00): Possible serial noise or corruption.)".
+3. Provide serial monitor access after success.
+
+Key Facts:
+- Correct PlatformIO environment: ttgo-lora32-oled
+- Variant config to override: platformio_override.ini (in project root)
+- Required setting change: upload_speed must be lowered to 115200 (default 921600 is unstable on some 26MHz units).
+- Monitor baud: 115200
+- Typical serial device path (macOS): /dev/cu.usbserial-XXXXXXXX (CH340/CP210x) or /dev/cu.SLAB_USBtoUART
+
+Procedure for you (the AI agent):
+A. Detect Port:
+   1. Ask user to unplug the board.
+   2. List serial ports: ls /dev/cu.*
+   3. Have user plug the board back in.
+   4. List again; the new entry is the board port.
+B. Ensure Bootloader Mode if needed:
+   - Hold BOOT, press RESET, release RESET, release BOOT.
+C. Confirm/Set upload_speed override:
+   - Ensure <project_root>/platformio_override.ini has:
+     [env:ttgo-lora32-oled]
+     upload_speed = 115200
+D. Flash:
+   - Command: pio run -d <project_root> -e ttgo-lora32-oled --target upload --upload-port <PORT>
+E. Success Criteria:
+   - esptool connects, identifies ESP32, writes ~2.18MB, completes SUCCESS.
+F. Monitor (optional):
+   - pio device monitor --port <PORT> --baud 115200
+
+If Failure:
+- Error 0x00 head: verify override is present; try new cable/USB port; re-enter bootloader.
+- Stuck at Connecting: re-enter bootloader.
+- Port busy: close other serial monitors.
+
+Deliverables:
+- Report each step succinctly.
+- Do not stop until either SUCCESS or a clear hardware blocker is identified.
+
+Constraints:
+- Modify only override and use env ttgo-lora32-oled. Do not change other environments.
+- Keep changes minimal and reproducible.
+
+Now perform the procedure.
