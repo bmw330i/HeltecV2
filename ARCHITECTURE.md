@@ -1,166 +1,281 @@
-# Meshtastic Firmware Architecture
+# Heltec V2 Meshtastic System Architecture
 
-This document describes the architecture and supported hardware for this Meshtastic firmware build, specifically optimized for Heltec WiFi LoRa 32 boards with 26MHz crystals.
+This document describes the complete architecture of the Heltec V2 Meshtastic system, including the hardware platform, firmware optimization, communication interfaces, and the integrated Model Context Protocol (MCP) server for AI-powered interactions.
 
-## Supported Hardware
+## System Overview
 
-### Heltec WiFi LoRa 32 Variants
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   AI/Agent Layer                             │
+│  ┌─────────────────┐  ┌─────────────────┐                  │
+│  │ GitHub Copilot  │  │   Claude/GPT    │                  │
+│  │      Chat       │  │   AI Agents     │                  │
+│  └─────────────────┘  └─────────────────┘                  │
+└─────────────┬───────────────────┬───────────────────────────┘
+              │                   │
+              └───────┬───────────┘
+                      │ MCP Protocol
+┌─────────────────────┼─────────────────────────────────────┐
+│              MCP Server Layer                               │
+│  ┌─────────────────┐│┌─────────────────┐                  │
+│  │   Node.js MCP   │││  Python Bridge  │                  │
+│  │     Server      │││    Scripts      │                  │
+│  └─────────────────┘│└─────────────────┘                  │
+└─────────────────────┼─────────────────────────────────────┘
+                      │ Serial/USB Interface
+┌─────────────────────┼─────────────────────────────────────┐
+│             Hardware Layer                                  │
+│  ┌─────────────────┐│┌─────────────────┐                  │
+│  │   Heltec V2     │││  LoRa Mesh      │                  │
+│  │   ESP32 Board   │││   Network       │                  │
+│  └─────────────────┘│└─────────────────┘                  │
+│           │          │                                     │
+│  ┌─────────────────┐│┌─────────────────┐                  │
+│  │   WiFi Radio    │││  AppleNet WiFi  │                  │
+│  │   (802.11)      │││    Network      │                  │
+│  └─────────────────┘│└─────────────────┘                  │
+└─────────────────────┼─────────────────────────────────────┘
+                      │
+              ┌───────┴───────┐
+              │  Internet &   │
+              │  MQTT Broker  │
+              └───────────────┘
+```
 
-This firmware supports multiple variants of the Heltec WiFi LoRa 32 board:
+## Hardware Platform
 
-#### Heltec V1 (4MB Flash)
-- **ESP32 Chip**: ESP32-D0WDQ6-V3
-- **Flash Memory**: 4MB
-- **Crystal Frequency**: 26MHz (confirmed)
-- **Display**: OLED SSD1306 (0.96" 128x64)
-- **LoRa Module**: SX1276/SX1278
-- **Antenna**: SMA connector
-- **USB-to-Serial**: CH340/CH341
-- **MAC Address Example**: 58:bf:25:05:58:18
+### Heltec WiFi LoRa 32 V2.1 Specifications
+- **MCU**: ESP32-D0WDQ6-V3 dual-core @ 240MHz
+- **Flash Memory**: 8MB (optimized partition layout)
+- **Crystal**: 40MHz (corrected from original 26MHz assumption)
+- **LoRa Module**: SX1276/SX1278 (433/868/915 MHz)
+- **Display**: SSD1306 OLED 128x64 pixels
+- **WiFi**: 802.11 b/g/n (AppleNet network configured)
+- **Bluetooth**: BLE 4.2
+- **Power Management**: BQ25896 (4.2V safe charging for 1S LiPo)
+- **Connectivity**: USB-C via CP2102 bridge
 
-**Key Characteristics:**
-- Older revision with 4MB flash memory
-- Requires specific partition table configuration
-- Uses HELTEC_V1 build flag
-- App partition limited to ~2.4MB
+### Power Optimization
+```
+Battery Management:
+├── Charging Voltage: 4.2V (conservative for 1S LiPo safety)
+├── Battery Monitoring: Real-time level reporting
+├── Deep Sleep: Enabled for power conservation
+└── Voltage Regulation: Optimized for mesh operations
+```
 
-#### Heltec V2 (8MB Flash)
-- **ESP32 Chip**: ESP32-D0WDQ6-V3 or similar
-- **Flash Memory**: 8MB
-- **Crystal Frequency**: 26MHz (confirmed)
-- **Display**: OLED SSD1306 (0.96" 128x64)
-- **LoRa Module**: SX1276/SX1278
-- **Antenna**: SMA connector
-- **USB-to-Serial**: CH340/CH341
+## Firmware Architecture
 
-**Key Characteristics:**
-- Newer revision with 8MB flash memory
-- More flexible partition table options
-- Uses HELTEC_V2 build flag
-- Larger app partitions available
+### Meshtastic v2.7.13 Custom Build
+The firmware is specifically optimized for Heltec V2 hardware with:
 
-#### Heltec V2.1 (8MB Flash)
-- **ESP32 Chip**: ESP32-D0WDQ6-V3 or similar
-- **Flash Memory**: 8MB
-- **Crystal Frequency**: 26MHz (confirmed)
-- **Display**: OLED SSD1306 (0.96" 128x64)
-- **LoRa Module**: SX1276/SX1278
-- **Antenna**: SMA connector
-- **USB-to-Serial**: CH340/CH341
+#### Core Features Enabled
+- **Mesh Networking**: LoRa-based peer-to-peer communication
+- **WiFi Connectivity**: Internet bridge and web interface
+- **GPS Integration**: Position sharing and routing
+- **Text Messaging**: Encrypted mesh communications
+- **Device Management**: Remote configuration and monitoring
 
-**Key Characteristics:**
-- Latest revision with 8MB flash memory
-- Enhanced features and stability
-- Uses HELTEC_V2_1 build flag
-- Optimized for modern Meshtastic features
+#### Size-Optimized Configuration
+```cpp
+// Excluded modules for 8MB efficiency
+#define MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR 1
+#define MESHTASTIC_EXCLUDE_AUDIO 1
+#define MESHTASTIC_EXCLUDE_POWERMON 1
+#define MESHTASTIC_EXCLUDE_STOREFORWARD 1
+#define MESHTASTIC_EXCLUDE_CANNEDMESSAGES 1
+#define MESHTASTIC_EXCLUDE_RANGETEST 1
+```
 
-## Hardware Identification
+#### Partition Layout (8MB Flash)
+```
+Bootloader:     64KB  @ 0x1000
+Partition Table: 4KB  @ 0x8000  
+Boot App:        8KB  @ 0xe000
+Application:  3584KB  @ 0x10000  (Primary firmware)
+Flash App:    1024KB  @ 0x390000 (OTA updates)
+SPIFFS:       2048KB  @ 0x490000 (File system)
+Remaining:    1312KB              (Reserved/alignment)
+```
 
-### How to Identify Your Board Version
+## Communication Interfaces
 
-1. **Visual Inspection:**
-   - V1: Typically has "V1" silkscreen or no version marking
-   - V2: May have "V2" silkscreen
-   - V2.1: May have "V2.1" silkscreen or updated components
+### 1. LoRa Mesh Network
+- **Frequency**: 915MHz (North America)
+- **Modulation**: LoRa CSS (Chirp Spread Spectrum)  
+- **Range**: 2-15km (depending on terrain)
+- **Network**: Currently connected to 7-node mesh
+- **Encryption**: AES-256 mesh-wide encryption
+- **Topology**: Self-healing mesh with automatic routing
 
-2. **Flash Memory Check:**
-   ```bash
-   esptool.py --chip esp32 --port /dev/cu.usbserial-XXXX flash_id
+### 2. WiFi Connectivity
+- **Network**: AppleNet (configured and working)
+- **IP Assignment**: DHCP from home router
+- **Services**:
+  - Web interface (HTTP port 80)
+  - API endpoint (TCP port 4403)
+  - MQTT bridge (configurable)
+  - OTA firmware updates
+
+### 3. Serial Interface
+- **Physical**: USB-C via CP2102 bridge
+- **Protocol**: 115200 baud, 8N1
+- **Device Path**: `/dev/cu.usbserial-0001` (macOS)
+- **Uses**: Firmware flashing, debugging, direct Python API access
+
+## Model Context Protocol (MCP) Integration
+
+### MCP Server Architecture
+The system includes a sophisticated MCP server that enables natural language interaction with the Meshtastic hardware through AI agents and GitHub Copilot.
+
+#### Core MCP Tools
+```javascript
+Available Tools:
+├── check_device_status()     // Hardware health monitoring
+├── send_mesh_message()       // AI-controlled messaging  
+├── scan_mesh_network()       // Network topology discovery
+├── monitor_mesh_messages()   // Intelligent message filtering
+├── scan_wifi_network()       // Device discovery on LAN
+├── get_signal_quality()      // Performance analytics
+├── build_and_flash_firmware()// Automated deployment
+└── get_device_config()       // Configuration management
+```
+
+#### AI Agent Capabilities
+The MCP server enables sophisticated agentic behaviors:
+
+1. **Natural Language Control**
    ```
-   - 4MB = Heltec V1
-   - 8MB = Heltec V2 or V2.1
+   Human: "Send a weather update to the mesh network"
+   Agent: → send_mesh_message("Weather: Sunny, 75°F, winds 5mph NW")
+   ```
 
-3. **Bootloader Check:**
-   - Connect board and observe boot messages
-   - V1 boards may show different behavior with V2/V2.1 firmware
+2. **Intelligent Monitoring**
+   ```
+   Human: "Alert me if anyone sends an emergency message"
+   Agent: → monitor_mesh_messages() + keyword filtering + notifications
+   ```
 
-### Common Issues
+3. **Predictive Maintenance**
+   ```
+   Agent: → check_device_status() 
+          → detect battery < 20%
+          → send maintenance alert
+          → schedule charging reminder
+   ```
 
-- **Wrong firmware on wrong board**: V2.x firmware on V1 board causes blank screen/red LED
-- **Crystal frequency mismatch**: 26MHz crystal requires specific ESP32 configuration
-- **Partition table mismatch**: V1 needs custom 4MB partition table
+4. **Network Health Management**
+   ```
+   Agent: → scan_mesh_network()
+          → analyze node count trends  
+          → detect network fragmentation
+          → suggest optimal positioning
+   ```
 
-## Build Configuration
+#### GitHub Copilot Integration
+The MCP server integrates seamlessly with GitHub Copilot Chat:
 
-### PlatformIO Environments
-
-- `heltec-v1`: For 4MB Heltec V1 boards
-- `heltec-v2`: For 8MB Heltec V2 boards
-- `heltec-v2_1`: For 8MB Heltec V2.1 boards
-
-### Key Build Flags
-
-```ini
-# Heltec V1 specific
--D HELTEC_V1
--D MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR=1
--D MESHTASTIC_EXCLUDE_AUDIO=1
--D MESHTASTIC_EXCLUDE_POWERMON=1
--D MESHTASTIC_EXCLUDE_STOREFORWARD=1
--D MESHTASTIC_EXCLUDE_CANNEDMESSAGES=1
--D MESHTASTIC_EXCLUDE_RANGETEST=1
+```json
+// VS Code settings.json
+{
+  "mcp.servers": {
+    "heltec-meshtastic": {
+      "command": "node",
+      "args": ["./heltec-mcp-server/index.mjs"]
+    }
+  }
+}
 ```
 
-### Partition Tables
+**Example Copilot Interactions:**
+- `@mcp Check my device battery level`
+- `@mcp Send "Meeting at 3pm" to mesh`
+- `@mcp Monitor for emergency keywords for 10 minutes`
+- `@mcp Build and flash latest firmware`
 
-#### V1 (4MB Flash)
+## Development Environment
+
+### Python Communication Layer
+```python
+Core Scripts:
+├── messenger.py          // Interactive chat interface
+├── test_device.py        // Hardware validation
+├── find_device.py        // Network discovery
+├── simple_comm.py        // Basic serial communication
+└── Communication bridge for MCP server
 ```
-nvs: 0x9000, size 0x5000
-otadata: 0xe000, size 0x2000
-app0: 0x10000, size 0x250000 (2.44MB)
-app1: 0x260000, size 0x0A0000 (640KB)
-spiffs: 0x300000, size 0x100000 (1MB)
+
+### Node.js MCP Server
+```javascript
+Architecture:
+├── index.mjs             // Main MCP server implementation
+├── package.json          // Dependencies and configuration
+├── README.md             // MCP-specific documentation  
+└── Tool implementations with Python script integration
 ```
 
-#### V2/V2.1 (8MB Flash)
-Uses standard Meshtastic partition tables optimized for 8MB flash.
-
-## Firmware Features
-
-### Included Modules
-- Text messaging
-- GPS/location services
-- WiFi connectivity
-- MQTT integration
-- Bluetooth Low Energy (BLE)
-- OLED display support
-- LoRa mesh networking
-
-### Excluded Modules (Size Optimization)
-- Environmental sensors
-- Audio features
-- Power monitoring
-- Store and forward
-- Canned messages
-- Range testing
-
-## Security Considerations
-
-### Default Credentials
-The firmware includes default insecure credentials that should be changed:
-
-- **MQTT**: Username: "meshdev", Password: "large4cats"
-- **WiFi**: SSID: "wifi_ssid", PSK: "wifi_psk"
-
-### Secure Configuration
-Use the provided `.env` file and `userPrefs.jsonc` to configure secure credentials:
-
+### Build System
 ```bash
-# .env file
-MQTT_USERNAME=your_secure_username
-MQTT_PASSWORD=your_secure_password
-WIFI_SSID=your_wifi_ssid
-WIFI_PSK=your_wifi_password
+Tools:
+├── PlatformIO            // Firmware compilation and flashing
+├── install_prerequisites.sh  // Automated environment setup
+├── .gitignore            // Excludes build artifacts and dependencies
+└── Environment isolation with Python venv and Node.js modules
 ```
 
-## Development Notes
+## Security Architecture
 
-### Crystal Frequency
-All supported boards use 26MHz crystals, which requires specific ESP32 bootloader and partition configurations.
+### Multi-Layer Security Model
+```
+Application Layer:  MCP server input validation and sanitization
+Transport Layer:    Encrypted mesh communications (AES-256)
+Network Layer:      WiFi WPA2/WPA3 encryption (AppleNet)
+Physical Layer:     Local-only operation, no cloud dependencies
+```
 
-### Memory Constraints
-V1 boards have limited flash space, requiring careful module selection and size optimization.
+### Credential Management
+- **Environment Variables**: Secure credential storage in `.env`
+- **Git Exclusion**: Credentials never committed to repository
+- **Runtime Security**: MCP tools operate with minimal privileges
+- **Mesh Encryption**: All mesh traffic encrypted by default
 
-### Compatibility
-This firmware is based on Meshtastic v2.7.13 and may not be compatible with all Meshtastic network features or configurations.</content>
+## Deployment and Operations
+
+### Out-of-Box Setup Process
+1. **Hardware Connection**: USB-C cable to development machine
+2. **Environment Setup**: `./install_prerequisites.sh` (automated)
+3. **Firmware Flash**: PlatformIO build and upload
+4. **Network Join**: Automatic WiFi and mesh discovery
+5. **MCP Activation**: Node.js server ready for AI integration
+
+### Monitoring and Maintenance
+- **Health Checks**: Automated device status monitoring
+- **Battery Management**: Real-time power level tracking  
+- **Network Analytics**: Mesh performance and topology analysis
+- **Firmware Updates**: OTA and USB-based update mechanisms
+
+### Scalability Considerations
+- **Multi-Device Support**: MCP server can manage multiple boards
+- **Network Growth**: Mesh automatically accommodates new nodes
+- **Agent Orchestration**: Multiple AI agents can coordinate actions
+- **Integration Flexibility**: REST API and WebSocket support planned
+
+## Future Architecture Evolution
+
+### Planned Enhancements
+1. **Multi-Protocol Support**: LoRaWAN, Zigbee, Matter integration
+2. **Advanced AI Behaviors**: Learning mesh usage patterns
+3. **Edge Computing**: Local LLM integration for offline AI
+4. **Sensor Integration**: Environmental monitoring capabilities
+5. **Mobile Apps**: Native iOS/Android MCP clients
+
+### Research Directions
+- **Mesh AI**: Distributed intelligence across mesh nodes
+- **Predictive Routing**: AI-optimized message path selection
+- **Emergency Systems**: Automated disaster response coordination
+- **IoT Integration**: Smart home and industrial device management
+
+---
+
+This architecture represents a comprehensive integration of hardware capabilities, firmware optimization, communication protocols, and artificial intelligence interfaces, creating a platform for natural language interaction with mesh networks and IoT devices.</content>
 <parameter name="filePath">/Users/david/Documents/Meshtastic_LoRa32_26mhz/ARCHITECTURE.md

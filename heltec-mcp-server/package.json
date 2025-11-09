@@ -1,0 +1,39 @@
+{
+  "name": "heltec-mcp-server",
+  "version": "1.0.0",
+  "description": "Model Context Protocol server for Heltec V2 Meshtastic board interactions",
+  "type": "module",
+  "main": "index.mjs",
+  "scripts": {
+    "start": "node index.mjs",
+    "dev": "node --inspect index.mjs",
+    "test": "node test.mjs"
+  },
+  "keywords": [
+    "mcp",
+    "meshtastic", 
+    "heltec",
+    "lora",
+    "mesh-network",
+    "iot",
+    "copilot",
+    "ai-agent"
+  ],
+  "author": "David (bmw330i)",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.6.0",
+    "child_process": "^1.0.2",
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7",
+    "util": "^0.12.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bmw330i/HeltecV2.git",
+    "directory": "heltec-mcp-server"
+  }
+}

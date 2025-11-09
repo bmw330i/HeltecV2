@@ -1,0 +1,130 @@
+{
+  "wifi": {
+    "ssid": "AppleNet",
+    "password": "$WIFI_PSK"
+  },
+  "mqtt": {
+    "enabled": true,
+    "address": "$MQTT_SERVER",
+    "username": "$MQTT_USERNAME",
+    "password": "$MQTT_PASSWORD"
+  },
+  "device": {
+    "role": "CLIENT",
+    "nodeInfoBroadcastSecs": 3600,
+    "serialEnabled": true,
+    "debugLogEnabled": false,
+    "buttonGpio": 0,
+    "buzzerGpio": 0
+  },
+  "position": {
+    "positionBroadcastSecs": 900,
+    "smartBroadcastMinimumDistance": 100,
+    "smartBroadcastMinimumIntervalSecs": 30,
+    "fixedPosition": false,
+    "broadcastSmartMinimumDistance": 100,
+    "broadcastSmartMinimumIntervalSecs": 30
+  },
+  "power": {
+    "isPowerSaving": false,
+    "onBatteryShutdownAfterSecs": 0,
+    "adcMultiplierOverride": 0,
+    "waitBluetoothSecs": 60,
+    "sdsSecs": 4294967295,
+    "lsSecs": 300,
+    "minWakeSecs": 10
+  },
+  "network": {
+    "wifiEnabled": true,
+    "wifiSsid": "AppleNet",
+    "wifiPassword": "$WIFI_PSK",
+    "ethEnabled": false,
+    "addressMode": "DHCP"
+  },
+  "display": {
+    "screenOnSecs": 30,
+    "gpsFormat": "DEC",
+    "autoScreenCarouselSecs": 10,
+    "compassNorthTop": true,
+    "flipScreen": false,
+    "oled": "OLED_AUTO",
+    "displaymode": "DEFAULT",
+    "headingBold": false,
+    "wakeOnTapOrMotion": true
+  },
+  "lora": {
+    "usePreset": true,
+    "modemPreset": "LONG_FAST",
+    "bandwidth": 0,
+    "spreadFactor": 0,
+    "codingRate": 0,
+    "frequencyOffset": 0,
+    "region": "US",
+    "hopLimit": 3,
+    "txEnabled": true,
+    "txPower": 30,
+    "channelNum": 0,
+    "overrideDutyCycle": false,
+    "overrideFrequency": 0,
+    "sx126xRxBoostedGain": false,
+    "ignoreMqtt": false
+  },
+  "bluetooth": {
+    "enabled": true,
+    "mode": "RANDOM_PIN",
+    "fixedPin": 123456
+  },
+  "modules": {
+    "canned_message": {
+      "enabled": true,
+      "rotary1Pin": 0,
+      "rotary1PinA": 0,
+      "rotary1PinB": 0,
+      "rotary1PinPress": 0,
+      "updown1Enabled": true,
+      "inputbrokerPinA": 0,
+      "inputbrokerPinB": 0,
+      "inputbrokerPinPress": 0,
+      "inputbrokerEventCw": 0,
+      "inputbrokerEventCcw": 0,
+      "inputbrokerEventPress": 0,
+      "allowInputSource": "CANNED_MESSAGE_ROTARY1",
+      "sendBell": false,
+      "messages": [
+        "Hi I am off work now",
+        "Please come pick me up", 
+        "I am still working",
+        "Come Urgently Please",
+        "Everything is ok",
+        "I will walk home",
+        "I am walking home"
+      ]
+    },
+    "telemetry": {
+      "deviceUpdateInterval": 900,
+      "environmentUpdateInterval": 900,
+      "environmentMeasurementEnabled": false,
+      "environmentScreenEnabled": false,
+      "environmentDisplayFahrenheit": false,
+      "powerUpdateInterval": 900,
+      "powerMeasurementEnabled": true,
+      "powerScreenEnabled": true
+    },
+    "mqtt": {
+      "enabled": true,
+      "address": "$MQTT_SERVER",
+      "username": "$MQTT_USERNAME",
+      "password": "$MQTT_PASSWORD",
+      "encryptionEnabled": false,
+      "jsonEnabled": true,
+      "tlsEnabled": false,
+      "root": "msh",
+      "proxyToClientEnabled": false,
+      "mapReportingEnabled": false,
+      "mapReportSettings": {
+        "publishIntervalSecs": 3600,
+        "positionPrecision": 14
+      }
+    }
+  }
+}
